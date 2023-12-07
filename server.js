@@ -1,11 +1,13 @@
 const express = require("express");
-
+const multer = require('multer');
 const app = express();
+const path = require('path');
+
 const cors = require("cors");
 app.use(express.urlencoded({ extended: true }));
 
 
-const path = require('path');
+
 require('dotenv').config({
   override: true,
   path: path.join(__dirname, '.env'),
@@ -91,17 +93,41 @@ const getcode =  async (id)=>{
 // });
 
 
-app.post('/api/tag', async (req, res) => {
-  try {
-    const { numparc, lat , lng  , ntag} = req.body; 
 
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "/home/ussef/Desktop/readerTag/readertag/src/media/ImageData"); 
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + ".png");
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// app.post('/upload', upload.single('image'), (req, res) => {
+//   console.log("File uploaded successfully "  , upload.single('image'));
+//   res.json({ message: 'File uploaded successfully' });
+// });
+// const upload = multer({ dest: "/home/ussef/Desktop/readerTag/readertag/src/media/" });
+
+app.post('/api/tag' ,upload.array('images' ,10) , async (req, res) => {
+  try {
+    const { numparc, lat , lng  , ntag ,typebac , userid} = req.body; 
+    // const imageName = req.file.filename;
     // const codedata = await getcode(deviceid)
     // const  device =  codedata.rows[0].deviceid
-  
-    const insertQuery = 'INSERT INTO public.tag_reader (numparc , lat  , lng , ntag ) VALUES ($1,$2,$3,$4)';
-    const values = [numparc, lat , lng ,ntag];
+    const currentDate = new Date();
+    const read_date = currentDate.toISOString().slice(0, 19).replace("T", " ")
+    console.log(read_date)
+    const imageArray = req.files.map((file) => file.filename);
+    const insertQuery = 'INSERT INTO public.tag_reader (numparc , lat  , lng , ntag , typebac ,image  , userid , date_read) VALUES ($1,$2,$3,$4,$5 ,$6 , $7 , $8)';
+    const values = [numparc, lat , lng ,ntag , typebac,imageArray ,userid , read_date];
 
     await pool.query(insertQuery, values);
+
 
     res.status(200).json({ success: true, message: 'Data inserted successfully!' });
   } catch (err) {
@@ -120,7 +146,20 @@ app.get('/api/selectData', async (req, res) => {
   } catch (err) {
     console.error('Error executing select query:', err);
     res.status(500).json({ success: false, message: 'Internal server error' });
-  }
+ }
+});
+
+app.post('/api/getusers', async (req, res) => {
+  try {
+     const {username , password} = req.body
+    const selectQuery = `select * from   public.tag_user where username = $1 and  password = $2 `;
+    const  values = [username , password]
+    const result = await pool.query(selectQuery , values);
+    res.status(200).json({ success: true, data: result.rows });
+  } catch (err) {
+    console.error('Error executing select query:', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+ }
 });
 
 
