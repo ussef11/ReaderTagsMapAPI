@@ -1,8 +1,9 @@
+/* eslint-disable no-unused-vars */
 const express = require("express");
 const multer = require('multer');
 const app = express();
 const path = require('path');
-
+const moment = require('moment');
 const cors = require("cors");
 app.use(express.urlencoded({ extended: true }));
 
@@ -115,16 +116,31 @@ const upload = multer({ storage: storage });
 
 app.post('/api/tag' ,upload.array('images' ,10) , async (req, res) => {
   try {
-    const { numparc, lat , lng  , ntag ,typebac , userid} = req.body; 
+    const { numparc, lat , lng  , ntag ,typebac } = req.body; 
     // const imageName = req.file.filename;
     // const codedata = await getcode(deviceid)
     // const  device =  codedata.rows[0].deviceid
+
+  
     const currentDate = new Date();
-    const read_date = currentDate.toISOString().slice(0, 19).replace("T", " ")
-    console.log(read_date)
+const originalDateString = currentDate;
+
+// Parse the original date string using moment
+const parsedDate = moment(originalDateString, 'YYYY-MM-DD HH:mm:ss.SSSZ');
+
+// Format the date in the desired format
+const formattedDate = parsedDate.format('YYYY-MM-DD HH:mm:ss');
+
+console.log(formattedDate);
+
+
+
+
+    
+
     const imageArray = req.files.map((file) => file.filename);
-    const insertQuery = 'INSERT INTO public.tag_reader (numparc , lat  , lng , ntag , typebac ,image  , userid , date_read) VALUES ($1,$2,$3,$4,$5 ,$6 , $7 , $8)';
-    const values = [numparc, lat , lng ,ntag , typebac,imageArray ,userid , read_date];
+    const insertQuery = 'INSERT INTO public.tag_reader (numparc , lat  , lng , ntag , typebac ,image   , date_read) VALUES ($1,$2,$3,$4,$5 ,$6 , $7 )';
+    const values = [numparc, lat , lng ,ntag , typebac,imageArray  , formattedDate];
 
     await pool.query(insertQuery, values);
 
