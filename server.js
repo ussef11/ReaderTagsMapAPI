@@ -114,6 +114,8 @@ const upload = multer({ storage: storage });
 // });
 // const upload = multer({ dest: "/home/ussef/Desktop/readerTag/readertag/src/media/" });
 
+
+
 app.post('/api/tag' ,upload.array('images' ,10) , async (req, res) => {
   try {
     const { numparc, lat , lng  , ntag ,typebac } = req.body; 
@@ -122,25 +124,25 @@ app.post('/api/tag' ,upload.array('images' ,10) , async (req, res) => {
     // const  device =  codedata.rows[0].deviceid
 
   
-    const currentDate = new Date();
-const originalDateString = currentDate;
+  const currentDate = new Date();
+  const originalDateString = currentDate;
 
-// Parse the original date string using moment
-const parsedDate = moment(originalDateString, 'YYYY-MM-DD HH:mm:ss.SSSZ');
+  // Parse the original date string using moment
+  const parsedDate = moment(originalDateString, 'YYYY-MM-DD HH:mm:ss.SSSZ');
 
-// Format the date in the desired format
-const formattedDate = parsedDate.format('YYYY-MM-DD HH:mm:ss');
+  // Format the date in the desired format
+  const formattedDate = parsedDate.format('YYYY-MM-DD HH:mm:ss');
 
-console.log(formattedDate);
+  console.log(formattedDate);
 
 
 
 
     
 
-    const imageArray = req.files.map((file) => file.filename);
-    const insertQuery = 'INSERT INTO public.tag_reader (numparc , lat  , lng , ntag , typebac ,image   , date_read) VALUES ($1,$2,$3,$4,$5 ,$6 , $7 )';
-    const values = [numparc, lat , lng ,ntag , typebac,imageArray  , formattedDate];
+  const imageArray = req.files.map((file) => file.filename);
+  const insertQuery = 'INSERT INTO public.tag_reader (numparc , lat  , lng , ntag , typebac ,image   , date_read) VALUES ($1,$2,$3,$4,$5 ,$6 , $7 )';
+  const values = [numparc, lat , lng ,ntag , typebac,imageArray  , formattedDate];
 
     await pool.query(insertQuery, values);
 
@@ -177,6 +179,30 @@ app.post('/api/getusers', async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
  }
 });
+
+
+const datetime = ()=>{
+  const currentDate = new Date();
+  const originalDateString = currentDate;
+  const parsedDate = moment(originalDateString, 'YYYY-MM-DD HH:mm:ss.SSSZ');
+  const datetime = parsedDate.format('YYYY-MM-DD HH:mm:ss');
+  return  datetime
+}
+
+
+app.get('/api/count' , async(req , res)=>{
+  try{
+    const  today =   datetime()
+    const countquery =  `SELECT count(*) from public.tag_reader where date_read::date =  $1`
+    const value = [`${today}`];
+    const  result =  await pool.query(countquery , value);
+    res.status(200).json({data:result.rows[0].count})
+
+  }catch(error){
+      res.status(404).json(error)
+  }
+
+})
 
 
 
